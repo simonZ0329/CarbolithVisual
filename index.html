@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CARBONLOCK — Interactive Simulation</title>
+<style>
+:root{--bg:#121416;--pn:#1a1d20;--ln:#2c3237;--tx:#e6e9ec;--mu:#8d959d;--cy:#3cc8f0;--gn:#4fd08a;--gr:#c4ccd4;--am:#e8b04a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 "Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding:14px 24px;border-bottom:1px solid var(--ln);background:#0e1012}
+.logo{font-weight:800;font-size:24px;letter-spacing:.14em}.logo b{color:var(--gn)}
+.tag{color:var(--mu);font-size:13px;flex:1;min-width:220px}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--pn);border:1px solid var(--ln);border-radius:6px;padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--mu)}button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+button.on{background:#22303a;border-color:var(--cy);color:#fff}
+.go{background:var(--cy);color:#06222c;border-color:var(--cy);font-weight:700;padding:10px 20px}
+.go:hover{background:#6fd9f6}
+main{padding:20px 24px;max-width:1400px;margin:auto}
+section{display:none}section.show{display:block;animation:f .35s}@keyframes f{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){section.show{animation:none}}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.pn{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:14px}
+.pn h3,h2{margin:0 0 8px}h2{font-size:20px}h3{font-size:15px}
+.stage{position:relative;background:#0a0b0c;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
+canvas{display:block;width:100%;height:auto;cursor:grab;touch-action:none}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;align-items:center}
+.sw{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.muted{color:var(--mu)}.small{font-size:13px}
+.tl{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:8px}
+.tl button{padding:6px 2px;font-size:12px}
+.prog{height:6px;background:var(--ln);border-radius:3px;overflow:hidden;margin:8px 0}.prog i{display:block;height:100%;width:0;background:var(--cy)}
+.eq{font-size:18px;text-align:center;padding:10px;background:#0f1214;border-radius:6px;border:1px solid var(--ln)}
+.warn{border-left:3px solid var(--am);background:#2a2415;padding:8px 12px;border-radius:4px;font-size:13px}
+.note{border-left:3px solid var(--cy);background:#10222a;padding:8px 12px;border-radius:4px;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{padding:8px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:top}
+tr.sel{background:#1f2a31}tbody tr{cursor:pointer}
+.chip{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid}
+.c1{color:var(--gn);border-color:var(--gn)}.c2{color:var(--am);border-color:var(--am)}.c3{color:var(--mu);border-color:var(--mu)}
+.term{border-bottom:1px dotted var(--cy);cursor:help;color:#bfeaf8}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:800px){.two{grid-template-columns:1fr}}
+label{display:block;font-size:13px;color:var(--mu);margin-top:8px}
+input[type=number]{width:100%;background:#0f1214;border:1px solid var(--ln);border-radius:6px;padding:8px}
+input[type=range]{width:100%;accent-color:var(--cy)}
+.res{font-size:26px;font-weight:700;color:var(--gn)}
+.flow{display:flex;gap:8px;align-items:flex-end;height:120px;margin:10px 0}
+.flow div{flex:1;border-radius:4px 4px 0 0;position:relative;min-height:3px;transition:height .3s}
+.flow span{position:absolute;bottom:100%;left:0;right:0;text-align:center;font-size:12px;padding-bottom:2px}
+.ev{border:1px solid var(--ln);border-radius:6px;padding:10px;margin-bottom:10px;background:#15181b}
+.ev dl{margin:6px 0 0;display:grid;grid-template-columns:110px 1fr;gap:2px 10px;font-size:13px}.ev dt{color:var(--mu)}.ev dd{margin:0}
+#toast{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:360px;background:#10222a;border:1px solid var(--cy);padding:10px 14px;border-radius:8px;font-size:13px;display:none;z-index:9}
+body.pres{font-size:19px}body.pres .adv{display:none!important}body.pres .grid{grid-template-columns:1fr}body.pres .tl button{font-size:15px;padding:10px 2px}
+</style></head><body>
+<header>
+ <div class="logo">CARBON<b>LOCK</b></div>
+ <div class="tag">Stronger Roads. Self-Healing Cracks. A Lighter Carbon Footprint.</div>
+ <nav id="nav"><button data-t="sim" class="on">Simulation</button><button data-t="mech">Mechanism</button><button data-t="perf">Performance</button><button data-t="carb">Carbon Impact</button></nav>
+ <button id="pres">Presentation mode</button><button id="reset">Reset all</button>
+</header>
+<main>
+<p class="muted small" style="margin-top:0">Graphene helps prevent pavement damage from developing. CARBONLOCK’s microcapsules aim to repair damage that still occurs. Everything shown is a <b>proposed mechanism</b>, not validated experimental data.</p>
+
+<section id="sim" class="show">
+<div class="grid">
+ <div>
+  <div class="stage" id="stage"><canvas id="cv" width="900" height="520" aria-label="Asphalt cross-section simulation"></canvas></div>
+  <div class="bar adv">
+   <button class="on" data-v="gr">Graphene</button><button class="on" data-v="cap">Microcapsules</button><button class="on" data-v="agg">Aggregates</button>
+   <button id="zi" title="Zoom in">＋</button><button id="zo" title="Zoom out">－</button><button id="vr">Reset view</button><button id="fs">Full screen</button>
+   <span class="muted small">Scroll to zoom, drag to pan, click an object to inspect.</span>
+  </div>
+  <div class="bar"><button class="go" id="rain">Simulate Rainfall</button><button id="pp">Pause</button><button id="rs">Restart</button><span class="muted small">or click the crack</span></div>
+  <div class="prog"><i id="pg"></i></div>
+  <div class="tl" id="tl"></div>
+ </div>
+ <div>
+  <div class="pn"><h3 id="st">Select an object or start the rainfall</h3><div id="sd" class="small muted">Click graphene, a capsule, an aggregate, or the crack. Components are enlarged for education; real capsules and graphene sheets are microscopic.</div></div>
+  <div class="pn" style="margin-top:12px"><div class="eq" id="eq">Ca(OH)₂ + CO₂ → CaCO₃ + H₂O</div><div class="small muted" id="eq2" style="margin-top:6px;text-align:center">Overall proposed reaction</div></div>
+  <div class="pn adv" style="margin-top:12px"><h3>Legend</h3><div class="small">
+   <div><span class="sw" style="background:#c4ccd4"></span>Graphene sheet</div>
+   <div><span class="sw" style="background:#3cc8f0"></span>Capsule A (moisture-responsive, Ca(OH)₂)</div>
+   <div><span class="sw" style="background:#4fd08a"></span>Capsule B (pH-responsive, Ca source)</div>
+   <div><span class="sw" style="background:#3a3f45"></span>Aggregate</div>
+   <div><span class="sw" style="background:#fff"></span>Calcium carbonate (CaCO₃)</div>
+   <div><span class="sw" style="background:#3cc8f0;opacity:.5"></span>Water</div>
+   <div><span class="sw" style="background:#ffb454"></span>Carbonate ions (CO₃²⁻)</div></div></div>
+ </div>
+</div></section>
+
+<section id="mech">
+<h2>Graphene reinforcement</h2>
+<div class="grid">
+ <div>
+  <div class="stage"><canvas id="mc" width="640" height="340" style="cursor:default"></canvas></div>
+  <div class="bar"><span class="muted small">Configuration:</span>
+   <span id="cfg"><button data-c="0">Conventional</button> <button data-c="1">Graphene-modified</button> <button data-c="2" class="on">CARBONLOCK</button></span></div>
+  <div class="bar"><span class="muted small">Mechanism:</span>
+   <span id="md"><button data-m="mol" class="on">A. Molecular interaction</button> <button data-m="stress">B. Reinforcement</button> <button data-m="crack">C. Crack resistance</button></span></div>
+ </div>
+ <div>
+  <div class="pn"><h3 id="mt"></h3><div id="mx" class="small"></div></div>
+  <div class="pn" style="margin-top:12px"><label for="gs" style="margin:0">Hypothetical graphene concentration: <b id="gv"></b></label>
+   <input type="range" id="gs" min="0" max="2" step="0.1" value="0.8">
+   <div class="small" style="margin-top:6px">Reinforcement indicator: <b id="gi"></b></div>
+   <div id="gw" class="warn" style="margin-top:8px;display:none">High hypothetical concentration: graphene may agglomerate and could weaken performance.</div>
+   <p class="small muted">The slider changes visual density only. No formula links concentration to performance: real effects depend on graphene type, dispersion, asphalt composition and test conditions.</p></div>
+ </div>
+</div></section>
+
+<section id="perf">
+<h2>Performance comparison</h2>
+<div class="two">
+ <div class="pn"><table><thead><tr><th>Property</th><th>Conventional</th><th>Graphene</th><th>CARBONLOCK</th></tr></thead><tbody id="pt"></tbody></table>
+  <p class="small muted">Status chips show evidence level only. CARBONLOCK has no measured results yet.</p></div>
+ <div class="pn"><h3 id="pn1"></h3><div id="pd" class="small"></div></div>
+</div>
+<div class="pn" style="margin-top:14px"><div class="bar" id="et"></div><div id="ec"></div></div>
+</section>
+
+<section id="carb">
+<h2>CO₂ mineralization calculator</h2>
+<div class="two">
+ <div class="pn">
+  <label for="m">Mass of Ca(OH)₂ (g)</label><input type="number" id="m" min="0" step="any" value="100">
+  <label for="e">Assumed conversion efficiency: <b id="ev"></b></label><input type="range" id="e" min="1" max="100" step="1" value="50">
+  <label for="a">Available CO₂ (g, optional)</label><input type="number" id="a" min="0" step="any" placeholder="leave blank for unlimited">
+  <p class="small muted">Efficiency starts at 50%, not 100%. Choose 100% only to see the stoichiometric ceiling.</p>
+ </div>
+ <div class="pn"><div class="small muted">Theoretical CO₂ mineralized</div><div class="res" id="r1"></div>
+  <div class="small" id="r2"></div>
+  <div class="flow" id="fl"></div>
+  <div class="small" id="r3"></div></div>
+</div>
+<div class="warn" style="margin-top:14px">This is a stoichiometric estimate (CO₂ = Ca(OH)₂ × 44.01 / 74.09 × efficiency), not a measurement of actual atmospheric CO₂ capture. Graphene’s role is mechanical reinforcement, not CO₂ capture.</div>
+</section>
+</main>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const T={gr:["Graphene nanoplatelets","Thin carbon-based sheets intended to improve asphalt’s mechanical properties. Their main role here is reinforcement, not CO₂ capture."],
+A:["Capsule A","Moisture-responsive capsule containing calcium hydroxide, Ca(OH)₂. Proposed to release it when water arrives."],
+B:["Capsule B","pH-responsive capsule containing a calcium source. Proposed to release calcium ions when local pH rises."],
+agg:["Aggregate","Stone particles that carry most of the load in the pavement."],
+crack:["Micro-crack","A crack from the surface into the asphalt. Click it, or press Simulate Rainfall, to run the proposed repair sequence."]};
+const GL={"graphene nanoplatelets":"Stacked few-layer graphene flakes, used as a reinforcing filler.","calcium hydroxide":"Ca(OH)₂, an alkaline compound. Dissolving it raises local pH.","carbonate ions":"CO₃²⁻, formed when dissolved CO₂ reacts under alkaline conditions.","calcium carbonate":"CaCO₃, the mineral in limestone. Proposed to fill part of a crack.","asphalt binder":"The sticky black material that glues aggregates together."};
+function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display="none",5000)}
+document.addEventListener("click",e=>{const t=e.target.closest(".term");if(t)toast(t.textContent+": "+GL[t.textContent.toLowerCase()])});
+const term=s=>`<span class="term" tabindex="0">${s}</span>`;
+function rng(s){return()=>(s=(s*16807)%2147483647)/2147483647}
+/* ---------- tabs ---------- */
+function tab(id){$$("section").forEach(s=>s.classList.toggle("show",s.id==id));$$("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t==id));if(id=="mech")dm()}
+$("#nav").onclick=e=>{if(e.target.dataset.t)tab(e.target.dataset.t)};
+$("#pres").onclick=()=>{document.body.classList.toggle("pres");$("#pres").classList.toggle("on")};
+/* ---------- simulation ---------- */
+const W=900,H=520,SY=80,cv=$("#cv"),cx=cv.getContext("2d");
+const R=rng(7),agg=[],sheets=[];
+for(let i=0;i<24;i++)agg.push({x:30+R()*840,y:120+R()*380,r:14+R()*20});
+for(let i=0;i<46;i++)sheets.push({x:20+R()*860,y:110+R()*390,l:22+R()*26,a:(R()-.5)*.9});
+const capA=[[380,190],[525,250],[395,300],[505,150]].map(p=>({x:p[0],y:p[1],t:"A"}));
+const capB=[[350,245],[545,195],[430,345],[480,300]].map(p=>({x:p[0],y:p[1],t:"B"}));
+const caps=capA.concat(capB);
+const crk=[[450,SY],[444,130],[456,175],[446,225],[458,270],[450,325]];
+const cum=[0];for(let i=1;i<crk.length;i++)cum.push(cum[i-1]+Math.hypot(crk[i][0]-crk[i-1][0],crk[i][1]-crk[i-1][1]));
+const CL=cum[cum.length-1];
+function pt(f){let d=f*CL,i=1;while(i<cum.length-1&&cum[i]<d)i++;const u=(d-cum[i-1])/(cum[i]-cum[i-1]||1);return[crk[i-1][0]+(crk[i][0]-crk[i-1][0])*u,crk[i-1][1]+(crk[i][1]-crk[i-1][1])*u]}
+caps.forEach(c=>{let b=1e9;for(let k=0;k<=40;k++){const p=pt(k/40),d=Math.hypot(p[0]-c.x,p[1]-c.y);if(d<b){b=d;c.n=p}}});
+const STEPS=[["Rainfall","Water droplets fall onto the pavement surface."],["Water infiltration","Water enters the crack and moves toward nearby microcapsules."],["Capsule A activation","Moisture reaches Capsule A, representing release of calcium hydroxide."],["pH increase","Dissolving calcium hydroxide raises the local pH (illustrative, not measured)."],["Capsule B activation","The elevated pH is proposed to trigger calcium-ion release from Capsule B."],["Carbonate formation","Dissolved atmospheric CO₂ forms carbonate ions under alkaline conditions."],["Mineralization","Calcium ions and carbonate ions combine to form calcium carbonate (CaCO₃)."],["Crack filling","White deposits gradually appear in the crack. This is a visual of a proposed process; full repair is not claimed."]];
+const EQ=[null,null,["Ca(OH)₂ → Ca²⁺ + 2OH⁻","Release of hydroxide and calcium"],["Ca(OH)₂ → Ca²⁺ + 2OH⁻","Local pH increases"],["Ca²⁺ released from Capsule B","pH-triggered release (proposed)"],["CO₂ + 2OH⁻ → CO₃²⁻ + H₂O","Carbonate ion formation"],["Ca²⁺ + CO₃²⁻ → CaCO₃","Precipitation"],["Ca(OH)₂ + CO₂ → CaCO₃ + H₂O","Overall proposed reaction"]];
+$("#tl").innerHTML=STEPS.map((s,i)=>`<button data-s="${i+1}" title="${s[0]}">${i+1}</button>`).join("");
+let step=0,sT=0,playing=false,view={k:1,x:0,y:0},show={gr:1,cap:1,agg:1},sel=null,last=performance.now();
+const D=3600;
+function info(t,d){$("#st").textContent=t;$("#sd").innerHTML=d}
+function setStep(s,t){step=s;sT=t;sel=null;const i=STEPS[s-1];info(`Step ${s}: ${i[0]}`,i[1]);const q=EQ[s]||EQ[7];$("#eq").textContent=q[0];$("#eq2").textContent=q[1];$$("#tl button").forEach(b=>b.classList.toggle("on",+b.dataset.s==s))}
+function start(){setStep(1,0);playing=true;$("#pp").textContent="Pause"}
+function resetSim(){step=0;sT=0;playing=false;sel=null;$$("#tl button").forEach(b=>b.classList.remove("on"));$("#eq").textContent="Ca(OH)₂ + CO₂ → CaCO₃ + H₂O";$("#eq2").textContent="Overall proposed reaction";$("#pp").textContent="Pause";info("Select an object or start the rainfall","Click graphene, a capsule, an aggregate, or the crack. Components are enlarged for education; real capsules and graphene sheets are microscopic.")}
+$("#rain").onclick=start;$("#rs").onclick=start;
+$("#pp").onclick=()=>{if(!step)return start();playing=!playing;$("#pp").textContent=playing?"Pause":"Play"};
+$("#tl").onclick=e=>{const s=+e.target.dataset.s;if(s){setStep(s,.6);playing=false;$("#pp").textContent="Play"}};
+$$("[data-v]").forEach(b=>b.onclick=()=>{show[b.dataset.v]^=1;b.classList.toggle("on")});
+$("#zi").onclick=()=>zoom(1.25,W/2,H/2);$("#zo").onclick=()=>zoom(.8,W/2,H/2);$("#vr").onclick=()=>view={k:1,x:0,y:0};
+$("#fs").onclick=()=>{const s=$("#stage");document.fullscreenElement?document.exitFullscreen():s.requestFullscreen&&s.requestFullscreen()};
+function zoom(f,px,py){const k=Math.min(5,Math.max(.6,view.k*f)),r=k/view.k;view.x=px-(px-view.x)*r;view.y=py-(py-view.y)*r;view.k=k}
+function pos(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
+cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoom(e.deltaY<0?1.12:.89,p[0],p[1])},{passive:false});
+let drag=null;
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);drag={p:pos(e),v:{...view},m:0}};
+cv.onpointermove=e=>{if(!drag)return;const p=pos(e);drag.m=Math.max(drag.m,Math.hypot(p[0]-drag.p[0],p[1]-drag.p[1]));view.x=drag.v.x+p[0]-drag.p[0];view.y=drag.v.y+p[1]-drag.p[1]};
+cv.onpointerup=e=>{if(drag&&drag.m<5)pick(pos(e));drag=null};
+function dseg(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,u=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1)));return Math.hypot(px-x1-dx*u,py-y1-dy*u)}
+function pick(p){const x=(p[0]-view.x)/view.k,y=(p[1]-view.y)/view.k,tol=9/view.k;
+ if(show.cap)for(const c of caps)if(Math.hypot(x-c.x,y-c.y)<14){sel=c;return info(T[c.t][0],T[c.t][1])}
+ for(let i=1;i<crk.length;i++)if(dseg(x,y,...crk[i-1],...crk[i])<tol+4){sel="crack";info(T.crack[0],T.crack[1]);return start()}
+ if(show.gr)for(const s of sheets){const dx=Math.cos(s.a)*s.l/2,dy=Math.sin(s.a)*s.l/2;if(dseg(x,y,s.x-dx,s.y-dy,s.x+dx,s.y+dy)<tol){sel=s;return info(T.gr[0],T.gr[1])}}
+ if(show.agg)for(const a of agg)if(Math.hypot(x-a.x,y-a.y)<a.r){sel=a;return info(T.agg[0],T.agg[1])}
+ sel=null}
+const E=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+function ionPos(c,i,reach,pull){const a=i*2.1+c.x,d=reach*(22+i*7),x=c.x+Math.cos(a)*d,y=c.y+Math.sin(a)*d;return[x+(c.n[0]-x)*pull,y+(c.n[1]-y)*pull]}
+function dot(x,y,r,c){cx.fillStyle=c;cx.beginPath();cx.arc(x,y,r,0,7);cx.fill()}
+function frame(now){const dt=Math.min(100,now-last);last=now;
+ if(playing&&step){sT+=dt/D;if(sT>=1){if(step<8){setStep(step+1,0)}else{sT=1;playing=false;$("#pp").textContent="Play"}}}
+ cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,W,H);
+ cx.setTransform(view.k,0,0,view.k,view.x,view.y);
+ const sky=cx.createLinearGradient(0,0,0,SY);sky.addColorStop(0,"#0c1a24");sky.addColorStop(1,"#16242e");cx.fillStyle=sky;cx.fillRect(-2000,-2000,5000,2000+SY);
+ const g=cx.createLinearGradient(0,SY,0,H);g.addColorStop(0,"#2b2f33");g.addColorStop(1,"#17191b");cx.fillStyle=g;cx.fillRect(-2000,SY,5000,3000);
+ cx.fillStyle="#6c8795";cx.font="13px sans-serif";cx.fillText("Atmosphere (CO₂)",14,24);
+ if(show.agg)agg.forEach(a=>{cx.fillStyle="#3a3f45";cx.strokeStyle="#4d555d";cx.lineWidth=1.5;cx.beginPath();cx.ellipse(a.x,a.y,a.r*1.15,a.r*.85,a.x,0,7);cx.fill();cx.stroke()});
+ if(show.gr)sheets.forEach(s=>{const dx=Math.cos(s.a)*s.l/2,dy=Math.sin(s.a)*s.l/2;cx.strokeStyle=s===sel?"#fff":"#c4ccd4";cx.lineWidth=s===sel?4:2.4;cx.beginPath();cx.moveTo(s.x-dx,s.y-dy);cx.lineTo(s.x+dx,s.y+dy);cx.stroke()});
+ const pa=step<3?0:step==3?E(sT):1,pb=step<5?0:step==5?E(sT):1,pH=step<4?0:step==4?sT:1;
+ /* crack */
+ cx.lineJoin="round";cx.lineCap="round";cx.beginPath();crk.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));
+ cx.strokeStyle=step>=8?"#8a929a":"#000";cx.setLineDash(step>=8?[5,5]:[]);cx.lineWidth=step>=8?13:10;cx.stroke();cx.setLineDash([]);
+ cx.beginPath();crk.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.strokeStyle="#000";cx.lineWidth=7;cx.stroke();
+ if(sel==="crack"){cx.strokeStyle="rgba(255,255,255,.35)";cx.lineWidth=1;cx.stroke()}
+ /* water */
+ const wf=step<2?0:step==2?E(sT):1;
+ if(wf>0){cx.strokeStyle="rgba(60,200,240,.85)";cx.lineWidth=5;cx.beginPath();for(let k=0;k<=30;k++){const p=pt(k/30*wf);k?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])}cx.stroke()}
+ /* pH halo */
+ if(pH>0&&show.cap){capA.forEach(c=>{const r=75*pH,gg=cx.createRadialGradient(c.x,c.y,0,c.x,c.y,r);gg.addColorStop(0,"rgba(190,90,255,.35)");gg.addColorStop(1,"rgba(190,90,255,0)");cx.fillStyle=gg;cx.beginPath();cx.arc(c.x,c.y,r,0,7);cx.fill()});cx.fillStyle="#d7a8ff";cx.font="12px sans-serif";cx.fillText("local pH ↑ (illustrative)",capA[0].x-70,capA[0].y-48)}
+ /* capsules + ions */
+ if(show.cap){caps.forEach(c=>{const on=c.t=="A"?pa>0:pb>0,col=c.t=="A"?"#3cc8f0":"#4fd08a";
+  cx.fillStyle="#0e1c22";cx.strokeStyle=col;cx.lineWidth=c===sel?4:2.5;cx.shadowColor=on?col:"transparent";cx.shadowBlur=on?16:0;cx.beginPath();cx.arc(c.x,c.y,11,0,7);cx.fill();cx.stroke();cx.shadowBlur=0;dot(c.x,c.y,4,col);
+  cx.fillStyle="#fff";cx.font="bold 10px sans-serif";cx.fillText(c.t,c.x-3,c.y-14);
+  const rc=c.t=="A"?pa:pb;if(rc>0){const pull=step==7?E(sT):step>=8?1:0;for(let i=0;i<6;i++){const p=ionPos(c,i,rc,pull*.92);dot(p[0],p[1],pull>.85?3.2:2.4,pull>.7?"#fff":c.t=="A"?"#8fe3ff":"#9bf0c0")}}})}
+ /* carbonate */
+ if(step>=6&&step<8){const q=step==6?sT:1;for(let i=0;i<10;i++){if(i/10>q+.1)continue;const p=pt(.1+i*.085);dot(p[0]+(i%2?8:-8),p[1],2.6,step==7?"#fff":"#ffb454")}if(step==6){cx.fillStyle="#ffb454";cx.font="12px sans-serif";cx.fillText("CO₃²⁻",pt(.5)[0]+14,pt(.5)[1])}}
+ /* deposit */
+ if(step>=7){const f=step==7?.1*sT:.6*E(sT)+.1;for(let i=0;i<60;i++){const u=i/60;if(u>f)break;const p=pt(u);dot(p[0]+Math.sin(i*5)*2,p[1],3.6,"#fff")}}
+ /* rain */
+ if(step==1||step==2){for(let i=0;i<46;i++){const y=((last*.35+i*61)%(SY+20));const x=(i*83+Math.sin(i)*30)%W;cx.fillStyle="rgba(60,200,240,.8)";cx.fillRect(x,y-12,2,10)}}
+ cx.setTransform(1,0,0,1,0,0);
+ cx.fillStyle="rgba(0,0,0,.6)";cx.fillRect(10,H-34,386,24);cx.fillStyle="#e8b04a";cx.font="12px sans-serif";cx.fillText("Internal components are enlarged for illustration, not to scale",18,H-17);
+ const bx=W-130;cx.fillStyle="#fff";cx.fillRect(bx,H-24,60*view.k,2);cx.fillStyle="#8d959d";cx.fillText("schematic",bx,H-30);
+ $("#pg").style.width=step?(((step-1)+sT)/8*100)+"%":"0";
+ requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+/* ---------- mechanism ---------- */
+const mc=$("#mc"),mx=mc.getContext("2d"),R2=rng(11),ms=[];
+for(let i=0;i<110;i++)ms.push({x:20+R2()*600,y:25+R2()*290,l:20+R2()*22,a:(R2()-.5)*.8});
+const mcaps=[[110,120,"A"],[250,220,"B"],[400,100,"A"],[520,240,"B"],[320,150,"A"],[170,260,"B"]];
+let cfg=2,mode="mol";
+const MT={mol:["A. Molecular interaction","Graphene surfaces can interact with asphalt molecules through adsorption and van der Waals forces, which may restrict molecular movement near the sheet. Shown: asphalt chains packed closer to sheets."],
+stress:["B. Physical reinforcement","Sheets may act as stiff inclusions in the "+term("asphalt binder")+", spreading stress and hindering deformation. Shown: the surface dents less in modified mixes (conceptual)."],
+crack:["C. Crack resistance","Sheets may deflect or blunt a growing crack. Shown: the same crack in each configuration (conceptual, not simulated mechanics)."]};
+function dm(){const g=+$("#gs").value,n=cfg?Math.round(4+g*50):0;mx.clearRect(0,0,640,340);mx.fillStyle="#20242a";mx.fillRect(0,0,640,340);
+ const sh=ms.slice(0,n);
+ if(mode=="stress"){mx.strokeStyle="#e8b04a";mx.lineWidth=2;for(let x=80;x<600;x+=100){mx.beginPath();mx.moveTo(x,6);mx.lineTo(x,30);mx.lineTo(x-5,22);mx.moveTo(x,30);mx.lineTo(x+5,22);mx.stroke()}
+  mx.fillStyle="#0e1012";mx.beginPath();mx.moveTo(0,0);mx.lineTo(640,0);mx.lineTo(640,4);mx.quadraticCurveTo(320,cfg?18:44,0,4);mx.fill()}
+ sh.forEach(s=>{const dx=Math.cos(s.a)*s.l/2,dy=Math.sin(s.a)*s.l/2;mx.strokeStyle="#c4ccd4";mx.lineWidth=3;mx.beginPath();mx.moveTo(s.x-dx,s.y-dy);mx.lineTo(s.x+dx,s.y+dy);mx.stroke();
+  if(mode=="mol"&&cfg&&s===sh[0]||mode=="mol"&&cfg&&sh.indexOf(s)%5==0){mx.strokeStyle="#e8b04a";mx.lineWidth=1.3;for(let k=1;k<=2;k++)for(const sg of[-1,1]){mx.beginPath();for(let t=-.5;t<=.5;t+=.1){const px=s.x+Math.cos(s.a)*s.l*t-Math.sin(s.a)*sg*k*7,py=s.y+Math.sin(s.a)*s.l*t+Math.cos(s.a)*sg*k*7+Math.sin(t*30+k)*1.5;t<-.45?mx.moveTo(px,py):mx.lineTo(px,py)}mx.stroke()}}});
+ if(cfg==2)mcaps.forEach(c=>{mx.fillStyle="#0e1c22";mx.strokeStyle=c[2]=="A"?"#3cc8f0":"#4fd08a";mx.lineWidth=2.5;mx.beginPath();mx.arc(c[0],c[1],9,0,7);mx.fill();mx.stroke()});
+ if(mode=="crack"){mx.strokeStyle="#000";mx.lineWidth=5;mx.lineCap="round";mx.beginPath();let x=320,y=340,hits=0,stop=0;mx.moveTo(x,y);
+  for(;y>0&&!stop;){const dy=8;y-=dy;x+=Math.sin(y*.07)*2;let hit=sh.find(s=>Math.hypot(s.x-x,s.y-y)<s.l*.5+4);
+   if(hit&&cfg){hits++;if(hits>2){stop=1;break}const dir=hit.x<x?1:-1;for(let k=0;k<5;k++){x+=dir*8;mx.lineTo(x,y)}}mx.lineTo(x,y)}
+  mx.stroke();mx.fillStyle="#e8b04a";mx.font="12px sans-serif";mx.fillText(stop?"crack arrested":"crack reaches surface",10,330)}
+ mx.fillStyle="#8d959d";mx.font="12px sans-serif";mx.fillText("Conceptual diagram, not to scale",440,330);
+ $("#gv").textContent=cfg?g.toFixed(1)+" wt% (hypothetical)":"n/a (no graphene)";
+ $("#gi").textContent=!cfg?"None":g==0?"None":g<.7?"Light":g<1.4?"Moderate (visual density only)":"Dense: agglomeration risk";
+ $("#gw").style.display=cfg&&g>=1.4?"block":"none";
+ $("#gs").disabled=!cfg;$("#mt").textContent=MT[mode][0];$("#mx").innerHTML=MT[mode][1]+"<br><br>Uses "+term("graphene nanoplatelets")+" in conventional, graphene-only, or CARBONLOCK form."}
+$("#cfg").onclick=e=>{if(e.target.dataset.c){cfg=+e.target.dataset.c;$$("#cfg button").forEach(b=>b.classList.toggle("on",b===e.target));dm()}};
+$("#md").onclick=e=>{if(e.target.dataset.m){mode=e.target.dataset.m;$$("#md button").forEach(b=>b.classList.toggle("on",b===e.target));dm()}};
+$("#gs").oninput=dm;
+/* ---------- performance ---------- */
+const P=[
+["Rutting resistance","Resistance to permanent wheel-path deformation at high temperature.","Ruts hold water and reduce safety.","May stiffen the binder; published studies report reduced rutting in specific tests.","Not a main target; effect untested.",["Baseline","Literature: promising","Not yet tested"]],
+["Fatigue resistance","Resistance to cracking from repeated loading.","Fatigue cracks are a main cause of failure.","Sheets may hinder crack growth; results depend on dispersion and dosage.","Capsules could add voids that matter; untested.",["Baseline","Mixed evidence","Not yet tested"]],
+["Moisture resistance","Resistance to water damage and stripping.","Water weakens the binder–aggregate bond.","Graphene oxide studies report some improvement; not guaranteed.","Capsules rely on moisture, so balance is a key question.",["Baseline","Literature: some improvement","Not yet tested"]],
+["Crack repair capability","Ability to restore material in a crack.","Sealed cracks slow further damage.","Not a repair mechanism. It may reduce crack initiation.","Proposed Ca(OH)₂ to CaCO₃ mineral deposition in cracks.",["None","None","Proposed only"]],
+["CO₂ mineralization","CO₂ converted to solid carbonate.","Links road upkeep to carbon goals.","Graphene is not claimed to capture CO₂.","Stoichiometric potential via Ca(OH)₂; real capture unmeasured.",["None","None","Theoretical only"]]];
+const cc=s=>s.startsWith("Lit")||s.startsWith("Mixed")?"c2":s=="Baseline"||s=="None"?"c3":"c3";
+$("#pt").innerHTML=P.map((r,i)=>`<tr data-i="${i}"><td><b>${r[0]}</b></td>${r[5].map(s=>`<td><span class="chip ${cc(s)}">${s}</span></td>`).join("")}</tr>`).join("");
+function pd(i){$$("#pt tr").forEach((t,j)=>t.classList.toggle("sel",i==j));const r=P[i];$("#pn1").textContent=r[0];$("#pd").innerHTML=`<p><b>What it measures:</b> ${r[1]}</p><p><b>Why it matters:</b> ${r[2]}</p><p><b>Graphene may:</b> ${r[3]}</p><p><b>CARBONLOCK microcapsules:</b> ${r[4]}</p>`}
+$("#pt").onclick=e=>{const t=e.target.closest("tr");if(t)pd(+t.dataset.i)};pd(0);
+const ref="[Add full citation from the paper]";
+const EV={
+"Graphene research":`<div class="note">External findings, not CARBONLOCK results. They support the rationale for testing graphene.</div><br>
+<div class="ev"><b>1. Graphene-modified asphalt mixture (2021)</b><dl><dt>Finding</dt><dd>Rut depth fell from 6.9 mm to 2.75 mm</dd><dt>Material</dt><dd>Graphene-modified asphalt mixture</dd><dt>Dosage</dt><dd>[Add from paper]</dd><dt>Conditions</dt><dd>Study’s own wheel-tracking test</dd><dt>Reference</dt><dd>${ref}</dd></dl>
+<div style="display:flex;gap:10px;margin-top:8px;align-items:flex-end;height:70px"><div style="width:60px;height:100%;background:#555;font-size:11px;text-align:center">6.9 mm</div><div style="width:60px;height:40%;background:var(--gr);color:#000;font-size:11px;text-align:center">2.75</div><span class="small muted">External result, not CARBONLOCK</span></div></div>
+<div class="ev"><b>2. Graphene nanoplatelet-modified binder</b><dl><dt>Finding</dt><dd>33.2% lower non-recoverable creep compliance; 53.9% higher elastic recovery</dd><dt>Material</dt><dd>Graphene nanoplatelet-modified asphalt binder</dd><dt>Dosage</dt><dd>[Add from paper]</dd><dt>Conditions</dt><dd>Specific formulation and test condition</dd><dt>Reference</dt><dd>${ref}</dd></dl></div>
+<div class="ev"><b>3. Graphene oxide-modified asphalt</b><dl><dt>Finding</dt><dd>Reported gains in high-temperature performance and moisture resistance; low-temperature cracking did not improve consistently</dd><dt>Material</dt><dd>Graphene oxide-modified asphalt</dd><dt>Dosage</dt><dd>[Add from paper]</dd><dt>Conditions</dt><dd>[Add from paper]</dd><dt>Reference</dt><dd>${ref}</dd></dl></div>`,
+"Self-healing research":`<div class="note">No self-healing citations are included yet. Add verified references here; none are invented.</div>`,
+"CARBONLOCK proposed mechanisms":`<div class="ev">Proposed, not validated:<ul><li>Capsule A releases Ca(OH)₂ when moisture arrives.</li><li>Rising pH triggers Capsule B to release calcium ions.</li><li>Dissolved CO₂ forms carbonate ions; CaCO₃ precipitates in cracks.</li><li>Graphene provides mechanical reinforcement only.</li></ul></div>`,
+"Future experiments":`<div class="ev">Still to be measured:<ul><li><b>Water movement:</b> does graphene hinder water reaching the capsules and block activation?</li><li>Capsule survival during mixing and compaction.</li><li>Whether CaCO₃ forms in cracks and how much.</li><li>Rutting, fatigue and moisture tests on CARBONLOCK samples.</li><li>Effect of graphene dosage and dispersion.</li></ul></div>`};
+$("#et").innerHTML=Object.keys(EV).map((k,i)=>`<button data-k="${k}"${i?"":' class="on"'}>${k}</button>`).join("");
+function ev(k){$("#ec").innerHTML=EV[k];$$("#et button").forEach(b=>b.classList.toggle("on",b.dataset.k==k))}
+$("#et").onclick=e=>{if(e.target.dataset.k)ev(e.target.dataset.k)};ev("Graphene research");
+/* ---------- calculator ---------- */
+function calc(){const m=Math.max(0,+$("#m").value||0),ef=+$("#e").value/100,av=$("#a").value===""?null:Math.max(0,+$("#a").value);
+ const req=m*44.01/74.09,pot=req*ef;let co=pot,lim="Ca(OH)₂ (at "+(ef*100).toFixed(0)+"% conversion)";
+ if(av!==null&&av<pot){co=av;lim="CO₂ (available amount is limiting)"}
+ const caco3=co*100.09/44.01,h2o=co*18.02/44.01,used=co*74.09/44.01;
+ $("#ev").textContent=(ef*100).toFixed(0)+"%";
+ $("#r1").textContent=co.toFixed(2)+" g CO₂";
+ $("#r2").innerHTML=`Conversion efficiency: <b>${(ef*100).toFixed(0)}%</b><br>CaCO₃ formed: <b>${caco3.toFixed(2)} g</b><br>Limiting reactant: <b>${lim}</b>`;
+ const mx=Math.max(m,caco3,1e-9),bars=[["Ca(OH)₂ in",m,"#8d959d"],["Ca(OH)₂ used",used,"#3cc8f0"],["CO₂",co,"#ffb454"],["CaCO₃",caco3,"#fff"],["H₂O",h2o,"#3cc8f0"]];
+ $("#fl").innerHTML=bars.map(b=>`<div style="height:${Math.max(2,b[1]/mx*100)}%;background:${b[2]}"><span>${b[1].toFixed(1)}</span></div>`).join("");
+ $("#r3").innerHTML=`<span class="muted">${bars.map(b=>b[0]).join(" · ")}</span><br>Ca(OH)₂ + CO₂ → CaCO₃ + H₂O (mass in grams, stoichiometric)`}
+["#m","#e","#a"].forEach(s=>$(s).oninput=calc);
+/* ---------- global reset ---------- */
+$("#reset").onclick=()=>{resetSim();view={k:1,x:0,y:0};show={gr:1,cap:1,agg:1};$$("[data-v]").forEach(b=>b.classList.add("on"));
+ cfg=2;mode="mol";$("#gs").value=.8;$$("#cfg button").forEach(b=>b.classList.toggle("on",b.dataset.c=="2"));$$("#md button").forEach(b=>b.classList.toggle("on",b.dataset.m=="mol"));
+ $("#m").value=100;$("#e").value=50;$("#a").value="";document.body.classList.remove("pres");$("#pres").classList.remove("on");pd(0);ev("Graphene research");calc();dm();tab("sim")};
+dm();calc();
+</script></body></html>
